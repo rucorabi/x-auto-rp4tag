@@ -8,9 +8,9 @@
   "customizations": {
     "vscode": {
       "extensions": [
-		"esbenp.prettier-vscode",
-		"EditorConfig.EditorConfig"
-	]
+        "esbenp.prettier-vscode",
+        "EditorConfig.EditorConfig"
+      ]
     }
   }
 }

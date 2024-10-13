@@ -1,12 +1,20 @@
 {
   "private": true,
   "scripts": {
-    "build": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.js"
+    "predeploy": "npm run build",
+    "deploy": "clasp push",
+    "prebuild": "rm -rf dist/*",
+    "build": "node build.js"
   },
   "devDependencies": {
     "@google/clasp": "^2.4.2",
+    "@types/google-apps-script": "^1.0.83",
     "esbuild": "^0.24.0",
+    "esbuild-gas-plugin": "^0.8.0",
     "prettier": "^3.3.3",
     "typescript": "^5.6.2"
+  },
+  "dependencies": {
+    "twitter-api-sdk": "^1.2.1"
   }
 }

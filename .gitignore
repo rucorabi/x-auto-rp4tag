@@ -1,2 +1,8 @@
 node_modules
-dist
+dist/*
+!dist/.gitkeep
+
+static/*
+!static/.gitkeep
+
+.clasp.json
