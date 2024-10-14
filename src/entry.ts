@@ -44,7 +44,7 @@ global.repostFromReserved = jobWrapper(() => {
 
 // 過去のFAを予約する
 //   posts -> reserved の処理を行う
-global.pastPostJob = jobWrapper(() => {
+global.pastPostReserve = jobWrapper(() => {
   const repos = getRepositories();
   pastPostReserve({
     postRepos: repos.Post,
