@@ -1,3 +1,7 @@
+export function isHashTag(tag: string): tag is HashTag {
+  return tag.startsWith('#');
+}
+
 // いずれかのタグを含む かつ リツイートを除外 するクエリを生成する
 export function genAnyTagAndExcludeRetweetQuery(tags: HashTag[]) {
   return `(${tags.map((tag) => `${tag}`).join(' OR ')}) -is:retweet`;

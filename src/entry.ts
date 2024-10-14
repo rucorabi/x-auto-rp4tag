@@ -1,49 +1,81 @@
 import { getConfigs } from './configs';
-import { getSheets } from './sheets';
 
 import { searchAndSaveAndReserved } from './services/searchAndSaveAndReserved';
 import { pastPostReserve } from './services/pastPostReserve';
 import { repostFromReserved } from './services/repostFromReserved';
+import * as repositories from './repositories';
+
+function getRepositories() {
+  const ssheet = SpreadsheetApp.getActiveSpreadsheet();
+  const s = (sn: string) => ssheet.getSheetByName(sn)!;
+  return {
+    Post: new repositories.PostRepositoryImpl(s('posts')),
+    Tag: new repositories.TagRepositoryImpl(s('tags')),
+    Reserved: new repositories.ReservedPostRepositoryImpl(s('reserved')),
+  };
+}
 
 // @ts-ignore
 declare let global: any;
 
-global.repostJob = function () {
+// 検索とリポスト
+global.searchAndSaveReserved = jobWrapper(() => {
   const configs = getConfigs();
-  const sheets = getSheets(SpreadsheetApp.getActiveSpreadsheet());
-
-  if (sheets.Manage.isMaintenaneMode()) {
-    console.log('メンテナンスモード中のため処理をスキップします');
-    return;
-  }
+  const repos = getRepositories();
 
   // 新しいFAを検索してシートに書き込む
   searchAndSaveAndReserved(configs, {
-    postsSheet: sheets.Posts,
-    reservedSheet: sheets.Reserved,
-    tagsSheet: sheets.Tags,
+    tagRepos: repos.Tag,
+    postRepos: repos.Post,
+    reservedRepos: repos.Reserved,
   });
+});
 
-  // フラグが経っている場合のみ処理を実行
-  // フラグを立てるのは別のJOBで行う
-  if (sheets.Manage.needPickPastPost()) {
-    console.log('過去のFAのリポスト処理を実施します');
-    pastPostReserve({
-      postsSheet: sheets.Posts,
-      reservedSheet: sheets.Reserved,
-    });
-    // 処理済みとしてマーク
-    sheets.Manage.runPastPostProcessMarkAs(false);
-  }
+// 予約済みのFAポストをリポストする
+global.repostFromReserved = jobWrapper(() => {
+  const configs = getConfigs();
+  const repos = getRepositories();
 
-  // 予約済みのFAポストをリポストする
+  // 予約済みのFAをリポストする
   repostFromReserved(configs, {
-    reservedSheet: sheets.Reserved,
+    reservedRepos: repos.Reserved,
   });
-};
+});
 
-global.pastPostFlagJob = function () {
-  getSheets(
-    SpreadsheetApp.getActiveSpreadsheet(),
-  ).Manage.runPastPostProcessMarkAs(true);
-};
+// 過去のFAを予約する
+//   posts -> reserved の処理を行う
+global.pastPostJob = jobWrapper(() => {
+  const repos = getRepositories();
+  pastPostReserve({
+    postRepos: repos.Post,
+    reservedRepos: repos.Reserved,
+  });
+});
+
+// ジョブの共通実行判定
+//   メンテナンスモード中は処理をスキップする
+//   他の処理が実行中の場合はスキップする
+function jobWrapper(callback: () => void) {
+  return () => {
+    const manageSheet =
+      SpreadsheetApp.getActiveSpreadsheet().getSheetByName('manage');
+
+    if (manageSheet?.getRange('B2').getValue()) {
+      console.info('メンテナンスモード中のため処理をスキップします');
+      return;
+    }
+
+    const lock = LockService.getDocumentLock();
+    if (lock.tryLock(10000)) {
+      try {
+        callback();
+      } catch (e) {
+        console.error(e);
+      } finally {
+        lock.releaseLock();
+      }
+    } else {
+      console.info('他の処理が実行中のためスキップします');
+    }
+  };
+}

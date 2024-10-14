@@ -1,15 +1,21 @@
-import { getConfigs, ScriptProperties } from '../configs';
+import type { ScriptProperties } from '../configs';
 import { getTokenByRefreshToken, MyClient } from '../twitter';
-import type { ReservedSheet } from '../sheets';
+import type { ReservedPostRepository } from '../repositories';
 
 type Params = {
-  reservedSheet: ReservedSheet;
+  reservedRepos: ReservedPostRepository;
 };
 
 export function repostFromReserved(
   props: ScriptProperties,
-  { reservedSheet }: Params,
+  { reservedRepos }: Params,
 ) {
+  const targetIds = reservedRepos.findReadyIds();
+  if (targetIds.length === 0) {
+    console.info('リポスト対象がありませんでした');
+    return;
+  }
+
   const newTokens = getTokenByRefreshToken({
     clientId: props.client_id,
     clientSecret: props.client_secret,
@@ -20,12 +26,18 @@ export function repostFromReserved(
   props.updateRefreshToken(newTokens.refreshToken);
 
   const client = new MyClient(newTokens.accessToken);
-  for (const [id, postedAtCell] of reservedSheet.getReadyIdWithPostedAtCell()) {
+  for (const id of targetIds) {
+    console.log(`id=${id}`);
     const canMore = client.repost(props.user_id, id);
-    postedAtCell.setValue(new Date());
+
+    reservedRepos.markAsPosted(id);
+
+    // いいねもするが、エラーが起きた時には処理済みとなるようにする
+    //   リポストが目的なので、いいねができなくても問題ない
+    client.like(id, props.user_id);
 
     if (!canMore) {
-      console.log('リポスト回数の上限に達したため処理を終了します');
+      console.warn('リポスト回数の上限に達したため処理を終了します');
       break;
     }
   }

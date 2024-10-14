@@ -37,6 +37,15 @@ npm run deploy
 ---|---
 app_token | 検索を実施するアプリのトークン
 user_id | リポスト/いいねを行うユーザID(数値のやつ)
-refrech_token | リポスト/いいねを行うユーザのリフレッシュトークン
+refrech_token | リポスト/いいねを行うユーザのリフレッシュトークン。一度設定したら自動で更新される。
 client_id | アプリのCLIENT_ID
 client_secret | アプリのCLIENT_SECRET
+
+
+# スプレッドシートの準備
+
+4つのシートを用意する
+- manage
+- posts
+- reserved
+- tags

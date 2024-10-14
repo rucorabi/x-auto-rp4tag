@@ -1,8 +1,14 @@
-export class TagsSheet {
+import { isHashTag } from '../utils';
+
+export interface TagRepository {
+  findAll(): HashTag[];
+}
+
+// GoogleSpreadSheetを使ったTagRepositoryの実装
+export class TagRepositoryImpl implements TagRepository {
   constructor(private sheet: GoogleAppsScript.Spreadsheet.Sheet) {}
 
-  // #が付いている前提
-  enableTags(): HashTag[] {
+  findAll(): HashTag[] {
     const values = this.sheet.getRange('A2:C').getValues() as TagRow[];
     return values
       .filter(([id, tag, disable]) => id && tag && !disable)
@@ -11,10 +17,6 @@ export class TagsSheet {
         isHashTag(tag) ? tag : `#${tag}`,
       );
   }
-}
-
-function isHashTag(tag: string): tag is HashTag {
-  return tag.startsWith('#');
 }
 
 type TagRow = [

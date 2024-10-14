@@ -1,13 +1,13 @@
-import type { PostsSheet, ReservedSheet } from '../sheets';
+import type { PostRepository, ReservedPostRepository } from '../repositories';
 
 type Params = {
-  postsSheet: PostsSheet;
-  reservedSheet: ReservedSheet;
+  postRepos: PostRepository;
+  reservedRepos: ReservedPostRepository;
 };
 
-export function pastPostReserve({ postsSheet, reservedSheet }: Params) {
-  const allPostIds = postsSheet.getAllIds();
-  const reservedIds = reservedSheet.getAllIds();
+export function pastPostReserve({ postRepos, reservedRepos }: Params) {
+  const allPostIds = postRepos.findAllIds();
+  const reservedIds = reservedRepos.findAllIds();
 
   // すでに投稿 or 予約済みのIDを除外
   const targetIds = allPostIds.filter((id) => !reservedIds.includes(id));
@@ -16,5 +16,5 @@ export function pastPostReserve({ postsSheet, reservedSheet }: Params) {
 
   console.log(`過去ポストID: ${taretId}`);
 
-  reservedSheet.writePosts(taretId);
+  reservedRepos.save(taretId);
 }

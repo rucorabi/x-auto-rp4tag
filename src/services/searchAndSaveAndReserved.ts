@@ -1,24 +1,28 @@
-import { ScriptProperties } from '../configs';
+import type { ScriptProperties } from '../configs';
 import { MyClient } from '../twitter';
 import { genAnyTagAndExcludeRetweetQuery } from '../utils';
 
-import type { PostsSheet, TagsSheet, ReservedSheet } from '../sheets';
+import type {
+  PostRepository,
+  ReservedPostRepository,
+  TagRepository,
+} from '../repositories';
 
 type Params = {
-  tagsSheet: TagsSheet;
-  postsSheet: PostsSheet;
-  reservedSheet: ReservedSheet;
+  tagRepos: TagRepository;
+  postRepos: PostRepository;
+  reservedRepos: ReservedPostRepository;
 };
 
 export function searchAndSaveAndReserved(
   props: ScriptProperties,
-  { tagsSheet, postsSheet, reservedSheet }: Params,
+  { tagRepos, postRepos, reservedRepos }: Params,
 ) {
   const searchClient = new MyClient(props.app_token);
 
-  const sinceId = postsSheet.latestPostId();
+  const sinceId = postRepos.getLatestId();
   console.log(`sinceId: ${sinceId}`);
-  const query = genAnyTagAndExcludeRetweetQuery(tagsSheet.enableTags());
+  const query = genAnyTagAndExcludeRetweetQuery(tagRepos.findAll());
   const searchResult = searchClient.search(query, sinceId);
 
   if (searchResult.length === 0) {
@@ -30,8 +34,8 @@ export function searchAndSaveAndReserved(
     console.log(
       `新しいFAを見つけました: id=${post.id}, tags=${post.tags.join(',')}`,
     );
-    postsSheet.writePosts(post);
-    reservedSheet.writePosts(post.id);
+    postRepos.save(post);
+    reservedRepos.save(post.id);
   }
   return searchResult;
 }
