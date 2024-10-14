@@ -11,10 +11,11 @@ export class ReservedSheet {
     return ids.filter((id) => id !== ''); // 空文字は除外
   }
 
+  // リポストしていないIDと紐づくpostedAtセルを取得
   getReadyIdWithPostedAtCell(): [string, GoogleAppsScript.Spreadsheet.Range][] {
     const ret: [string, GoogleAppsScript.Spreadsheet.Range][] = [];
     for (let i = 2; i <= this.sheet.getLastRow(); i++) {
-      const range = this.sheet.getRange(i, 1, 1, 2);
+      const range = this.sheet.getRange(i, 1, 1, 3);
       const id = range.getCell(1, 1).getValue();
       const postedAtCell = range.getCell(1, 3);
       if (postedAtCell.isBlank()) {

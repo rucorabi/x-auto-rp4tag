@@ -107,8 +107,8 @@ export function getTokenByRefreshToken({
 
   const resData = JSON.parse(res.getContentText());
   return {
-    refreshToken: resData.refresh_token,
-    accessToken: resData.access_token,
+    refreshToken: resData.refresh_token as string,
+    accessToken: resData.access_token as string,
   };
 }
 

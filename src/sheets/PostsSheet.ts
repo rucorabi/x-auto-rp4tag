@@ -5,8 +5,8 @@ export class PostsSheet {
     const row: PostRowValues = [
       post.id,
       post.userId,
-      post.tags.join(','),
       post.createdAt,
+      post.tags.join(','),
       new Date(),
     ];
     this.sheet.appendRow(row);

@@ -1,31 +1,16 @@
 import { getConfigs } from './configs';
-
-import { ManageSheet } from './sheets/ManageSheet';
-import { PostsSheet } from './sheets/PostsSheet';
-import { ReservedSheet } from './sheets/ReservedSheet';
-import { TagsSheet } from './sheets/TagsSheet';
+import { getSheets } from './sheets';
 
 import { searchAndSaveAndReserved } from './services/searchAndSaveAndReserved';
 import { pastPostReserve } from './services/pastPostReserve';
+import { repostFromReserved } from './services/repostFromReserved';
 
 // @ts-ignore
 declare let global: any;
 
-// 各シートのインスタンスを取得&作成
-function getSheets() {
-  const ssheat = SpreadsheetApp.getActiveSpreadsheet();
-  const s = (sheetName: string) => ssheat.getSheetByName(sheetName)!;
-  return {
-    Manage: new ManageSheet(s('manage'))!,
-    Tags: new TagsSheet(s('tags')!),
-    Posts: new PostsSheet(s('posts')!),
-    Reserved: new ReservedSheet(s('reserved')!),
-  } as const;
-}
-
 global.myFunction = function () {
   const configs = getConfigs();
-  const sheets = getSheets();
+  const sheets = getSheets(SpreadsheetApp.getActiveSpreadsheet());
 
   if (sheets.Manage.isMaintenaneMode()) {
     console.log('メンテナンスモード中のため処理をスキップします');
@@ -50,4 +35,9 @@ global.myFunction = function () {
     // 処理済みとしてマーク
     sheets.Manage.runPastPostProcessMarkAs(false);
   }
+
+  // 予約済みのFAポストをリポストする
+  repostFromReserved(configs, {
+    reservedSheet: sheets.Reserved,
+  });
 };

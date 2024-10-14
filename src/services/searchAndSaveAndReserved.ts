@@ -1,10 +1,8 @@
-import type { PostsSheet } from '../sheets/PostsSheet';
-import type { TagsSheet } from '../sheets/TagsSheet';
-import { ReservedSheet } from '../sheets/ReservedSheet';
-
 import { ScriptProperties } from '../configs';
 import { MyClient } from '../twitter';
 import { genAnyTagAndExcludeRetweetQuery } from '../utils';
+
+import type { PostsSheet, TagsSheet, ReservedSheet } from '../sheets';
 
 type Params = {
   tagsSheet: TagsSheet;
@@ -19,6 +17,7 @@ export function searchAndSaveAndReserved(
   const searchClient = new MyClient(props.app_token);
 
   const sinceId = postsSheet.latestPostId();
+  console.log(`sinceId: ${sinceId}`);
   const query = genAnyTagAndExcludeRetweetQuery(tagsSheet.enableTags());
   const searchResult = searchClient.search(query, sinceId);
 
@@ -28,6 +27,9 @@ export function searchAndSaveAndReserved(
   }
 
   for (const post of searchResult) {
+    console.log(
+      `新しいFAを見つけました: id=${post.id}, tags=${post.tags.join(',')}`,
+    );
     postsSheet.writePosts(post);
     reservedSheet.writePosts(post.id);
   }
