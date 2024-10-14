@@ -8,7 +8,7 @@ import { repostFromReserved } from './services/repostFromReserved';
 // @ts-ignore
 declare let global: any;
 
-global.myFunction = function () {
+global.repostJob = function () {
   const configs = getConfigs();
   const sheets = getSheets(SpreadsheetApp.getActiveSpreadsheet());
 
@@ -40,4 +40,10 @@ global.myFunction = function () {
   repostFromReserved(configs, {
     reservedSheet: sheets.Reserved,
   });
+};
+
+global.pastPostFlagJob = function () {
+  getSheets(
+    SpreadsheetApp.getActiveSpreadsheet(),
+  ).Manage.runPastPostProcessMarkAs(true);
 };
