@@ -9,7 +9,7 @@ export class ManageSheet {
     this.sheet.getRange('B5').setValue(id);
   }
 
-  needRunPastPostProcess() {
+  needPickPastPost() {
     return this.sheet.getRange('B4').getValue();
   }
 

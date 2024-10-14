@@ -1,8 +1,8 @@
-import type { operations } from 'twitter-api-sdk/dist/gen/openapi-types';
+import type { tweetsRecentSearch } from 'twitter-api-sdk/dist/types';
 import { qs } from './utils';
 
 type RecentSearchResponse =
-  operations['tweetsRecentSearch']['responses']['200']['content']['application/json'];
+  tweetsRecentSearch['responses']['200']['content']['application/json'];
 
 export class MyClient {
   constructor(private token: string) {}

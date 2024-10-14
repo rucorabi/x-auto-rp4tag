@@ -1,70 +1,53 @@
-import { getTokenByRefreshToken, MyClient } from './twitter';
-import { getConfigs, ScriptProperties } from './configs';
+import { getConfigs } from './configs';
+
 import { ManageSheet } from './sheets/ManageSheet';
 import { PostsSheet } from './sheets/PostsSheet';
+import { ReservedSheet } from './sheets/ReservedSheet';
 import { TagsSheet } from './sheets/TagsSheet';
-import { genAnyTagAndExcludeRetweetQuery } from './utils';
 
-const SheetNames = {
-  Manage: 'manage',
-  Tags: 'tags',
-  Posts: 'posts',
-};
+import { searchAndSaveAndReserved } from './services/searchAndSaveAndReserved';
+import { pastPostReserve } from './services/pastPostReserve';
 
 // @ts-ignore
 declare let global: any;
 
+// 各シートのインスタンスを取得&作成
+function getSheets() {
+  const ssheat = SpreadsheetApp.getActiveSpreadsheet();
+  const s = (sheetName: string) => ssheat.getSheetByName(sheetName)!;
+  return {
+    Manage: new ManageSheet(s('manage'))!,
+    Tags: new TagsSheet(s('tags')!),
+    Posts: new PostsSheet(s('posts')!),
+    Reserved: new ReservedSheet(s('reserved')!),
+  } as const;
+}
+
 global.myFunction = function () {
   const configs = getConfigs();
-  const ssheat = SpreadsheetApp.getActiveSpreadsheet();
-  const sheet = (sheetName: string) => ssheat.getSheetByName(sheetName)!;
+  const sheets = getSheets();
 
-  const manageSheet = new ManageSheet(sheet(SheetNames.Manage)!);
-  if (manageSheet.isMaintenaneMode()) {
+  if (sheets.Manage.isMaintenaneMode()) {
     console.log('メンテナンスモード中のため処理をスキップします');
     return;
   }
 
-  const postsSheet = new PostsSheet(sheet(SheetNames.Posts)!);
-
   // 新しいFAを検索してシートに書き込む
-  searchAndWrite(configs, {
-    manageSheet,
-    tagsSheet: new TagsSheet(sheet(SheetNames.Tags)!),
-    postsSheet,
+  searchAndSaveAndReserved(configs, {
+    postsSheet: sheets.Posts,
+    reservedSheet: sheets.Reserved,
+    tagsSheet: sheets.Tags,
   });
 
-  if (manageSheet.needRunPastPostProcess()) {
-    // 過去のFAを検索してリポストする
-    pastPostProcess({ postsSheet });
+  // フラグが経っている場合のみ処理を実行
+  // フラグを立てるのは別のJOBで行う
+  if (sheets.Manage.needPickPastPost()) {
+    console.log('過去のFAのリポスト処理を実施します');
+    pastPostReserve({
+      postsSheet: sheets.Posts,
+      reservedSheet: sheets.Reserved,
+    });
+    // 処理済みとしてマーク
+    sheets.Manage.runPastPostProcessMarkAs(false);
   }
 };
-
-function searchAndWrite(
-  configs: ScriptProperties,
-  {
-    manageSheet,
-    tagsSheet,
-    postsSheet,
-  }: {
-    manageSheet: ManageSheet;
-    tagsSheet: TagsSheet;
-    postsSheet: PostsSheet;
-  },
-) {
-  const searchClient = new MyClient(configs.app_token);
-
-  const sinceId = manageSheet.getLatestTweetId();
-  const query = genAnyTagAndExcludeRetweetQuery(tagsSheet.enableTags());
-  const searchResult = searchClient.search(query, sinceId);
-
-  if (searchResult.length === 0) {
-    console.log('新しいFAは見つかりませんでした');
-    return;
-  }
-
-  postsSheet.writePosts(searchResult);
-  manageSheet.setLatestTweetId(searchResult[0].id);
-}
-
-function pastPostProcess({}: { postsSheet: PostsSheet }) {}
