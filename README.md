@@ -28,6 +28,12 @@
 このプロジェクトはVSCode上でのdev contaienrでの開発を想定しています。
 
 ## GASの開発準備
+### 必要なモジュールのインストール
+
+```sh
+npm install
+```
+
 ### Claspでアカウントへログイン
 ```sh
 npx clasp login
